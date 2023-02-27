@@ -1,0 +1,94 @@
+# usage ckrename <only_one_keywords> <suffix: SLOW>
+ckrename() {
+    # Generate the list command
+    local cmd="ck list local:experiment:*"
+
+    # If there are arguments, add them to the command
+    if [ $# -gt 0 ]; then
+        cmd+="$1*"
+    fi
+
+    # Run the list command and print the results
+    local experiments=$(eval $cmd)
+    echo "Matching experiments:"
+    echo "$experiments"
+    # Generate the rename command
+    local suffix=$2
+    local i=1
+    for exp in $experiments
+    do
+        local new_name="${exp}_${suffix}"
+        local rename_cmd="ck rename local:experiment:$exp local:experiment:$new_name"
+        echo "Running command: $rename_cmd"
+        eval $rename_cmd
+        ((i++))
+    done
+}
+
+# usage ckzip <keywords> <keywords>
+ckzip() {
+    # Generate the zip command
+    local cmd="ck zip local:experiment:*"
+
+    # If there are arguments, add them to the command
+    if [ $# -gt 0 ]; then
+        for arg in "$@"
+        do
+            cmd+="*$arg"
+        done
+        cmd+="*"
+    fi
+
+    # Add the archive name with the current date and hostname
+    local archive_name="~/mlperf_v3.0-closed-$(hostname)_$(date +"%Y%m%d").zip"
+    cmd+=" --archive_name=$archive_name"
+
+    # Print the command
+    echo "Running command: $cmd"
+
+    # Run the command
+    $cmd
+}
+
+
+# usage ckremove <keywords> <keywords>
+
+ckremove() {
+    # Generate the remove command
+    local cmd="ck rm local:experiment:*"
+
+    # If there are arguments, add them to the command
+    if [ $# -gt 0 ]; then
+        for arg in "$@"
+        do
+            cmd+="*$arg"
+        done
+        cmd+="*"
+    fi
+
+    # Print the command
+    echo "Running command: $cmd"
+
+    # Run the command
+    $cmd
+}
+
+cklist() {
+    # Generate the list command
+    local cmd="ck list local:experiment:*"
+
+    # If there are arguments, add them to the command
+    if [ $# -gt 0 ]; then
+        for arg in "$@"
+        do
+            cmd+="*$arg"
+        done
+        cmd+="*"
+    fi
+
+    # Print the command
+    echo "Running command: $cmd"
+
+    # Run the command
+    $cmd
+}
