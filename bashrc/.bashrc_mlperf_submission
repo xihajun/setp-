@@ -51,8 +51,7 @@ ckzip() {
 }
 
 
-# usage ckremove <keywords> <keywords>
-
+# usage ckremove <keyword> <keyword> ..
 ckremove() {
     # Generate the remove command
     local cmd="ck rm local:experiment:*"
@@ -73,6 +72,7 @@ ckremove() {
     $cmd
 }
 
+# usage cklist <keyword> <keyword> ..
 cklist() {
     # Generate the list command
     local cmd="ck list local:experiment:*"
@@ -91,4 +91,43 @@ cklist() {
 
     # Run the command
     $cmd
+}
+
+# usage ckrename_prefix <keywords> <changed_prefix: mlperf_vbackup->
+ckrename_prefix_notest_nopower() {
+    # Generate the list command
+    local cmd="ck list local:experiment:*"
+
+    # If there are arguments, add them to the command
+    if [ $# -gt 0 ]; then
+        cmd+="$1*"
+    fi
+
+    # Run the list command and print the results
+    local experiments=$(eval $cmd)
+    echo "Matching experiments:"
+    echo "$experiments"
+    # Generate the rename command
+    local ori_prefix="mlperf_v3.0-"
+    local changed_prefix=$2
+    local i=1
+    local auto_cmd_file=~/.auto_cmd
+    local auto_reverse_cmd_file=~/.auto_reverse_cmd
+    for exp in $experiments
+    do
+        if  [[ $exp == *"TEST"* ]] || [[ $exp == *"power"* ]]; then
+            echo "Ignored: $exp"
+            continue
+        fi
+        local new_name="${exp/$ori_prefix/$changed_prefix}"
+        local rename_cmd="ck rename local:experiment:$exp local:experiment:$new_name"
+        local reverse_rename_cmd="ck rename local:experiment:$new_name local:experiment:$exp"
+        echo "Running command: $rename_cmd"
+        echo "$rename_cmd" >> $auto_cmd_file
+        echo "$reverse_rename_cmd" >> $auto_reverse_cmd_file
+        eval $rename_cmd
+        ((i++))
+    done
+    echo "rename cmd saved to: $auto_cmd_file"
+    echo "reverse rename cmd saved to: $auto_reverse_cmd_file"
 }
