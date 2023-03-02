@@ -131,3 +131,18 @@ ckrename_prefix_notest_nopower() {
     echo "rename cmd saved to: $auto_cmd_file"
     echo "reverse rename cmd saved to: $auto_reverse_cmd_file"
 }
+
+# followed by
+# ck zip xxx
+# ck add repo --zip=zippedfile.zip
+# usage ckcopy <repo1> <repo2>
+ckcopy() {
+    from="$1"
+    to="$2"
+
+    experiments=$(ck list ${from}:experiment:*)
+
+    for exp in $experiments; do
+        ck cp ${from}:experiment:${exp} ${to}:experiment:${exp}
+    done
+}
