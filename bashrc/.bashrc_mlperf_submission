@@ -136,6 +136,7 @@ ckrename_prefix_notest_nopower() {
 # ck zip xxx
 # ck add repo --zip=zippedfile.zip
 # usage ckcopy <repo1> <repo2>
+# will copy xx:experiment:* to yy:experiment:*
 ckcopy() {
     from="$1"
     to="$2"
