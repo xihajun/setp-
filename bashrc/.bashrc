@@ -54,3 +54,32 @@ dockercontainer() {
   # Get into the container
   docker exec -it "$container_name" /bin/bash
 }
+
+# usage: watchgit build.sh "160,170"
+watchgit() {
+  file_path=$1
+  lines_range=$2
+
+  checkout_commits() {
+    git log --follow --reverse --pretty=format:"%H %s" -- "$file_path" | while read -r commit_id commit_message; do
+      git checkout -q "$commit_id"
+      # Add a small delay to allow the watch command to pick up the changes
+      sleep 1
+      clear
+      echo "Commit ID: $commit_id"
+      echo "Commit Message: $commit_message"
+      echo
+      display_file_changes
+    done
+
+    # Return to the original branch (e.g., main or master) after processing all commits
+    git checkout main
+  }
+
+  display_file_changes() {
+    sed -n "${lines_range}p" $file_path | cat -n
+  }
+
+  checkout_commits
+}
+
