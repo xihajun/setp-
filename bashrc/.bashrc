@@ -83,3 +83,13 @@ watchgit() {
   checkout_commits
 }
 
+# add history search ctrl - t for current folder | Need to `sudo apt-get install fzf`
+export CUSTOM_HISTFILE="~/.bash_history_more_info" #path of the new history file
+export PROMPT_COMMAND="history -a; history -c; history -r; date | xargs echo -n >>$CUSTOM_HISTFILE; echo -n ' - ' >>$CUSTOM_HISTFILE; pwd | xargs echo -n >>$CUSTOM_HISTFILE; echo -n ' - ' >>$CUSTOM_HISTFILE; tail -n 1 $HISTFILE >>$CUSTOM_HISTFILE; $PROMPT_COMMAND"
+
+search_dir_history() {
+    local selected_command=$(grep "^$(pwd) - " ~/.bash_history_more_info | awk -F" - " '{print $NF}' | fzf)
+    READLINE_LINE="$selected_command"
+    READLINE_POINT=${#selected_command}
+}
+bind -x '"\C-t": search_dir_history'
