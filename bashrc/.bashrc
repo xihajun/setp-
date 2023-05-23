@@ -83,7 +83,7 @@ watchgit() {
   checkout_commits
 }
 
-# add history search ctrl - t for current folder | Need to `sudo apt-get install fzf`
+# add history search ctrl - t for current folder | Requirement: `sudo apt-get install fzf`
 export CUSTOM_HISTFILE="~/.bash_history_more_info" #path of the new history file
 export PROMPT_COMMAND="history -a; history -c; history -r; date | xargs echo -n >>$CUSTOM_HISTFILE; echo -n ' - ' >>$CUSTOM_HISTFILE; pwd | xargs echo -n >>$CUSTOM_HISTFILE; echo -n ' - ' >>$CUSTOM_HISTFILE; tail -n 1 $HISTFILE >>$CUSTOM_HISTFILE; $PROMPT_COMMAND"
 
@@ -93,3 +93,12 @@ search_dir_history() {
     READLINE_POINT=${#selected_command}
 }
 bind -x '"\C-t": search_dir_history'
+
+# Search ssh host using ctrl - h | Requirement: `sudo apt-get install fzf`
+search_ssh_host() {
+    local search_term=$(awk '/^Host/{print $2}' ~/.ssh/config | fzf --prompt "Enter hostname to search: ")
+    echo "Host $search_term"
+    awk "/^Host $search_term$/{flag=1;next}/^Host/{flag=0}flag" ~/.ssh/config
+}
+bind -x '"\C-h": search_ssh_host'
+
