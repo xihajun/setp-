@@ -1,0 +1,16 @@
+# Usage example
+# run_command_until_removed "axs byquery loadgen_output --- , remove"
+run_command_until_removed() {
+    local command=$1
+
+    while true; do
+        # Run the command
+        output=$($command)
+
+        # Check the output for the string "None"
+        if [[ "$output" == "None" ]]; then
+            # If "None" is found, break the loop
+            break
+        fi
+    done
+}
