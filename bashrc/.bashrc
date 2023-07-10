@@ -102,3 +102,10 @@ search_ssh_host() {
 }
 bind -x '"\C-h": search_ssh_host'
 
+# Change badge automatically when switching machines using ssh when using iTerm2
+function ssh() {
+    printf "\e]1337;SetBadgeFormat=%s\a" $(echo -n "$1" | base64)
+    /usr/bin/ssh "$@"
+    printf "\e]1337;SetBadgeFormat=%s\a" $(echo -n 'local' | base64)
+}
+
