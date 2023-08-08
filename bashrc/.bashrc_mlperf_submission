@@ -147,3 +147,8 @@ ckcopy() {
         ck cp ${from}:experiment:${exp} ${to}:experiment:${exp}
     done
 }
+
+
+shownsp() {
+    watch -n .1 "/opt/qti-aic/tools/qaic-util -q | grep NSP\ Fr | cut -c 5-"
+}
