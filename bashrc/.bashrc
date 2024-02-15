@@ -109,3 +109,61 @@ function ssh() {
     printf "\e]1337;SetBadgeFormat=%s\a" $(echo -n 'local' | base64)
 }
 
+
+krai() {
+  # Define the groups
+  declare -A groups=( ["1"]="docker" ["2"]="qaic" ) # Add more groups here
+
+  # Function to display available groups
+  displayGroups() {
+    echo "Available groups:"
+    for key in "${!groups[@]}"; do
+      echo "$key. ${groups[$key]}"
+    done
+  }
+
+  # Function to add user to group
+  addToGroup() {
+    local defaultUser="junfhuan"
+    echo -n "Use default user '$defaultUser'? [Y/n]: "
+    read useDefault
+    if [ "$useDefault" != "${useDefault#[Nn]}" ]; then
+      echo -n "Enter the username: "
+      read username
+    else
+      username=$defaultUser
+    fi
+    echo "You have chosen to add the user '$username' to the group '${groups[$1]}'."
+    echo -n "Are you sure? [y/N] "
+    read answer
+    if [ "$answer" != "${answer#[Yy]}" ]; then
+      sudo usermod -a -G ${groups[$1]} $username
+      newgrp ${groups[$1]}
+    fi
+  }
+
+  # Function for groupAdder
+  groupAdderFunction() {
+    if [ -z "$1" ]; then
+      displayGroups
+    elif [ -n "${groups[$1]}" ]; then
+      addToGroup $1
+    else
+      echo "Invalid group number."
+    fi
+  }
+
+  # Main function
+  declare -A menu=( ["groupAdder"]="groupAdderFunction" ) # Add more menu options here
+
+  if [ -z "$1" ]; then
+    echo "Available options:"
+    for key in "${!menu[@]}"; do
+      echo "$key"
+    done
+  elif [ -n "${menu[$1]}" ]; then
+    ${menu[$1]} $2
+  else
+    echo "Invalid option."
+  fi
+}
