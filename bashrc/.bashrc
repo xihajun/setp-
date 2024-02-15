@@ -167,3 +167,51 @@ krai() {
     echo "Invalid option."
   fi
 }
+
+# Function to copy files between local and remote
+function copy_files() {
+    local operation=$1
+    local local_path=$2
+    local remote_ip=$3
+    local remote_directory="/local/mnt/workspace/junfan/binaries"
+    local username="junfhuan" # Change this to your username on the remote machine
+
+    # Define the remote path
+    local remote_path="$username@$remote_ip:$remote_directory/$(basename $local_path)"
+
+    # Function to copy from local to remote
+    copy_to_remote() {
+        echo "Preparing to copy from local to remote..."
+        ssh $username@$remote_ip "mkdir -p $remote_directory"
+        echo "Ready to copy $local_path to $remote_path. Proceed? [y/N]"
+        read answer
+        if [[ $answer = y ]]
+        then
+            rsync -avP $local_path $remote_path
+        else
+            echo "Operation cancelled."
+        fi
+    }
+
+    # Function to copy from remote to local
+    copy_from_remote() {
+        echo "Preparing to copy from remote to local..."
+        mkdir -p $(dirname $local_path)
+        echo "Ready to copy $remote_path to $local_path. Proceed? [y/N]"
+        read answer
+        if [[ $answer = y ]]
+        then
+            rsync -avP $remote_path $local_path
+        else
+            echo "Operation cancelled."
+        fi
+    }
+
+    # Check the operation and call the appropriate function
+    case $operation in
+        "to-remote") copy_to_remote ;;
+        "from-remote") copy_from_remote ;;
+        *) echo "Invalid operation. Use 'to-remote' or 'from-remote'." ;;
+    esac
+}
+
