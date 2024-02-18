@@ -215,3 +215,14 @@ function copy_files() {
     esac
 }
 
+
+# Function to prevent tracking of .DS_Store files
+setup_git_ignore() {
+  echo '**/.DS_Store' >> ~/.gitignore_global
+  git config --global core.excludesfile ~/.gitignore_global
+}
+
+# Check if the setup has been done before
+if [ ! -f ~/.gitignore_global ]; then
+  setup_git_ignore
+fi
