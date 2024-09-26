@@ -226,3 +226,105 @@ setup_git_ignore() {
 if [ ! -f ~/.gitignore_global ]; then
   setup_git_ignore
 fi
+
+
+
+######## AMD GPU RESET ########
+
+#  ##### PCI ID #####
+#  |               |
+#  |  Reset GPU    |
+#  |   by PCI ID   |
+#  |_______________|
+#      ||     ||
+#   .--'       '--.
+#  (    AMD GPU    )
+#   '-------------'
+
+# Resetting GPU by matching PCI Bus ID
+# and using amdgpu_gpu_recover
+
+# Function to reset an AMD GPU by its index
+reset_gpu() {
+    local gpu_index=$1
+
+    # Validate input
+    if [[ -z "$gpu_index" ]]; then
+        echo "Usage: reset_amd_gpu <gpu_index>"
+        return 1
+    fi
+
+    # Get and normalize PCI Bus ID
+    local pci_id=$(get_pci_bus_id "$gpu_index")
+    if [[ $? -ne 0 ]]; then
+        echo "$pci_id"  # Error message from get_pci_bus_id
+        return 1
+    fi
+
+    # Attempt to reset the GPU
+    if ! reset_gpu_by_pci_id "$pci_id" "$gpu_index"; then
+        echo "Error: Failed to reset GPU $gpu_index."
+        return 1
+    fi
+}
+
+# Function to normalize PCI Bus ID format
+normalize_pci_id() {
+    echo "$1" | sed -E 's/^0+([0-9a-f]+):([0-9a-f]+)\.([0-9a-f]+)$/\1:\2.\3/'
+}
+
+# Function to get PCI Bus ID for a given GPU index
+get_pci_bus_id() {
+    local gpu_index=$1
+    echo "Getting PCI Bus ID for GPU index $gpu_index..."
+    local pci_id=$(rocm-smi --showbus | grep -E "^GPU\[$gpu_index\]" | awk '{print $NF}' | tr '[:upper:]' '[:lower:]')
+    
+    if [[ -z "$pci_id" ]]; then
+        echo "Error: No PCI Bus ID found for GPU index $gpu_index."
+        return 1
+    fi
+    
+    normalize_pci_id "$pci_id"
+}
+
+# Function to reset GPU by PCI ID
+reset_gpu_by_pci_id() {
+    local pci_id=$1
+    local gpu_index=$2
+
+    echo "Searching for available DRI IDs with amdgpu_gpu_recover..."
+    sudo bash << EOF
+    for amdgpu_recover in /sys/kernel/debug/dri/*/amdgpu_gpu_recover; do
+        dri_dir=\$(dirname "\$amdgpu_recover")
+        dri_id=\$(basename "\$dri_dir")
+        dri_name_file="\$dri_dir/name"
+        
+        if [[ -f "\$dri_name_file" ]]; then
+            dri_pci_id=\$(grep -oP '(?<=dev=)[0-9a-f:.]+' "\$dri_name_file" | tr '[:upper:]' '[:lower:]')
+            dri_pci_id=\$(normalize_pci_id "\$dri_pci_id")
+            echo "Checking DRI node \$dri_id with PCI ID \$dri_pci_id"
+            
+            if [[ "\$dri_pci_id" == "$pci_id" ]]; then
+                echo "Matching DRI node found: \$dri_id. Attempting to reset GPU $gpu_index..."
+                
+                if [[ -w "\$amdgpu_recover" ]]; then
+                    if sudo cat "\$amdgpu_recover" 2>/dev/null; then
+                        echo "GPU $gpu_index (PCI: $pci_id) reset successfully using DRI node \$dri_id."
+                        exit 0
+                    else
+                        echo "Error: Failed to reset using cat. Error code: \$?"
+                    fi
+                else
+                    echo "Error: \$amdgpu_recover is not writable."
+                    ls -l "\$amdgpu_recover"
+                fi
+                
+                exit 1
+            fi
+        fi
+    done
+    
+    echo "Error: No matching DRI node found for PCI Bus ID $pci_id."
+    exit 1
+EOF
+}
